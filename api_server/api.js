@@ -23,7 +23,29 @@ app.post('/transaction', (req, res) => {
   res.json({ info: `Tranaction will be mined in block number: ${blockIndex}`});
 });
 
-app.get('/mine', (req, res) => {});
+app.get('/mine', (req, res) => {
+  const lastBlock = kisaCoin.getLastBlock();
+  const previousBlockHash = lastBlock['hash'];
+  const currentBlockData = {
+    transaction: kisaCoin.pendingTransactions,
+    index: kisaCoin.chain.length + 1
+  }
+
+  const nonce = kisaCoin.proofOfWork(previousBlockHash, currentBlockData);
+  const blockHash = kisaCoin.hashBlock(previousBlockHash, currentBlockData, nonce);
+
+  // Mining reward
+  kisaCoin.createNewTransaction(100, '00', 'recipientAddress')
+
+  // Finally create the block
+  const newBlock = kisaCoin.createNewBlock(nonce, previousBlockHash, blockHash);
+
+  res.json({
+    info: 'New block created such wow!!!',
+    block: newBlock
+  });
+
+});
 
 app.listen(port, () => {
   console.log(`listening on port ${port}!...`)
