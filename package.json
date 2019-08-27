@@ -2,7 +2,7 @@
   "name": "lancuch_blokow",
   "version": "1.0.0",
   "description": "",
-  "main": "api_server/api.js",
+  "main": "network/node.js",
   "scripts": {
     "start": "nodemon"
   },
