@@ -4,7 +4,11 @@
   "description": "",
   "main": "network/node.js",
   "scripts": {
-    "start": "nodemon"
+    "node_1": "nodemon -e js network/node.js 3001 http://localhost:3001",
+    "node_2": "nodemon -e js network/node.js 3002 http://localhost:3002",
+    "node_3": "nodemon -e js network/node.js 3003 http://localhost:3003",
+    "node_4": "nodemon -e js network/node.js 3004 http://localhost:3004",
+    "node_5": "nodemon -e js network/node.js 3005 http://localhost:3005"
   },
   "author": "David Moradi",
   "license": "ISC",

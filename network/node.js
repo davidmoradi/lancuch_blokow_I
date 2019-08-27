@@ -1,8 +1,8 @@
 const express = require('express');
 const app = express();
-const port = 3000;
 const bodyParser = require('body-parser');
 const Blockchain = require('../blockchain/blockchain');
+const port = process.argv[2]; // get the passed-in port number from command line
 
 const kisaCoin = new Blockchain();
 
