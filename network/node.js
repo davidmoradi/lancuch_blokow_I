@@ -48,7 +48,7 @@ app.get('/mine', (req, res) => {
 
 });
 
-app.post('/register-and-prodcast-node', (req, res) => {
+app.post('/register-and-broadcast-node', (req, res) => {
   const newNodeUrl = req.body.newNodeUrl;
 
   if (!kisaCoin.networkNodes.includes(newNodeUrl)) {
@@ -65,29 +65,51 @@ app.post('/register-and-prodcast-node', (req, res) => {
       json: true
     }
 
-    registerNodePromises.push(rp(registerNodeOptions));
+    registerNodePromises.push(
+      rp(registerNodeOptions).catch((err) => {
+        console.log(err)
+      })
+    );
   });
 
-  Promise.all(registerNodePromises).then((data) =>
+  Promise.all(registerNodePromises).then((data) => {
     const registerBulkOptions = {
       uri: newNodeUrl + '/register-node-in-bulk',
-      body: { allNetworkNodes: kisaCoin.networkNodes },
+      method: 'POST',
+      body: { allNetworkNodes: [ ...kisaCoin.networkNodes, kisaCoin.currentNodeUrl ] },
       json: true
     };
 
-    return rp(registerBulkOptions);
+    rp(registerBulkOptions).catch((err) => {
+      console.log(err)
+    })
   }).then((data) => {
     res.json({ info: 'New node registered with the network successfully... such WOW!!!'})
+  }).catch((err) => {
+    console.log(err);
   });
-
 });
 
 app.post('/register-node', (req, res) => {
-  // Implement
+  const newNodeUrl = req.body.newNodeUrl;
+  const nodeAlreadyExist = kisaCoin.networkNodes.includes(newNodeUrl);
+  const isCurrentNode = kisaCoin.currentNodeUrl === newNodeUrl;
+
+  if (!nodeAlreadyExist && !isCurrentNode) kisaCoin.networkNodes.push(newNodeUrl);
+
+  res.json({ info: 'Node registerd successfully... such WOW!!!'})
 });
 
 app.post('/register-node-in-bulk', (req, res) => {
-  // Implement
+  const allNetworkNodes = req.body.allNetworkNodes;
+
+  allNetworkNodes.forEach((networkNodes) => {
+    const nodeAlreadyExist = kisaCoin.networkNodes.includes(networkNodes);
+    const isCurrentNode = kisaCoin.currentNodeUrl === networkNodes;
+    if (!nodeAlreadyExist && !isCurrentNode) kisaCoin.networkNodes.push(networkNodes);
+  });
+
+  res.json({ info: "Bulk registration successful..."})
 });
 
 app.listen(port, () => {
