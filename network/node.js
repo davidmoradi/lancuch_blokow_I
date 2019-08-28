@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require('body-parser');
 const Blockchain = require('../blockchain/blockchain');
 const port = process.argv[2]; // get the passed-in port number from command line
+const rp = require('request-promise');
 
 const kisaCoin = new Blockchain();
 
@@ -45,6 +46,48 @@ app.get('/mine', (req, res) => {
     block: newBlock
   });
 
+});
+
+app.post('/register-and-prodcast-node', (req, res) => {
+  const newNodeUrl = req.body.newNodeUrl;
+
+  if (!kisaCoin.networkNodes.includes(newNodeUrl)) {
+    kisaCoin.networkNodes.push(newNodeUrl);
+  }
+
+  // loop through all existing nodes and register the new node
+  let registerNodePromises = [];
+  kisaCoin.networkNodes.forEach((networkNodeUrl) => {
+    const registerNodeOptions = {
+      uri: networkNodeUrl + '/register-node',
+      method: 'POST',
+      body: { newNodeUrl },
+      json: true
+    }
+
+    registerNodePromises.push(rp(registerNodeOptions));
+  });
+
+  Promise.all(registerNodePromises).then((data) =>
+    const registerBulkOptions = {
+      uri: newNodeUrl + '/register-node-in-bulk',
+      body: { allNetworkNodes: kisaCoin.networkNodes },
+      json: true
+    };
+
+    return rp(registerBulkOptions);
+  }).then((data) => {
+    res.json({ info: 'New node registered with the network successfully... such WOW!!!'})
+  });
+
+});
+
+app.post('/register-node', (req, res) => {
+  // Implement
+});
+
+app.post('/register-node-in-bulk', (req, res) => {
+  // Implement
 });
 
 app.listen(port, () => {
