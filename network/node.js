@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const Blockchain = require('../blockchain/blockchain');
 const port = process.argv[2]; // get the passed-in port number from command line
 const rp = require('request-promise');
+const uuid = require('uuid/v1');
+const nodeAddress = uuid().replace(/-/gi, "");
 
 const kisaCoin = new Blockchain();
 
@@ -59,17 +61,58 @@ app.get('/mine', (req, res) => {
   const nonce = kisaCoin.proofOfWork(previousBlockHash, currentBlockData);
   const blockHash = kisaCoin.hashBlock(previousBlockHash, currentBlockData, nonce);
 
-  // Mining reward
-  kisaCoin.createNewTransaction(100, '00', 'recipientAddress')
-
   // Finally create the block
   const newBlock = kisaCoin.createNewBlock(nonce, previousBlockHash, blockHash);
 
-  res.json({
-    info: 'New block created such wow!!!',
-    block: newBlock
+  // Broadcast this newBlock to other nodes on the network
+  let newBlockPromises = [];
+  kisaCoin.networkNodes.forEach((networkNodeUrl) => {
+    const requestOptions = {
+      uri: networkNodeUrl + '/recieve-new-block',
+      method: 'POST',
+      body: { newBlock },
+      json: true
+    }
+
+    newBlockPromises.push(rp(requestOptions));
+
   });
 
+  Promise.all(newBlockPromises).then((data) => {
+    // Now that the new block is created and broadcaste to other nodes,
+    // create a mining reward transaction for this node and broadcast it
+    const miningRewardTransactionOptions = { amount: 100, sender: '00', recipient: nodeAddress }
+    const requestOptions = {
+      uri: kisaCoin.currentNodeUrl + '/transaction/broadcast',
+      method: 'POST',
+      body: miningRewardTransactionOptions,
+      json: true
+    }
+
+    return rp(requestOptions);
+  }).then((data) => {
+    res.json({
+      info: 'New block created such wow!!!',
+      block: newBlock
+    });
+  });
+});
+
+app.post('/recieve-new-block', (req, res) => {
+  const newBlock = req.body.newBlock;
+
+  // Series of checks
+  const lastBlock = kisaCoin.getLastBlock()
+  const correctHash = lastBlock.hash === newBlock.previousBlockHash;
+  const correctIndex = lastBlock['index'] === newBlock['index'] - 1
+
+  if (correctHash && correctIndex) {
+    kisaCoin.chain.push(newBlock);
+    kisaCoin.pendingTransactions = []; // empty pending transactions because they are now added to the new block
+    res.json({ info: 'new block received and accepted. yay!', newBlock: newBlock })
+  } else {
+    res.json({ info: 'new block rejected. You dun goofed!!!', newBlock: newBlock })
+  }
 });
 
 app.post('/register-and-broadcast-node', (req, res) => {
