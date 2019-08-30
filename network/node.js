@@ -20,8 +20,32 @@ app.get('/blockchain', (req, res) => {
 });
 
 app.post('/transaction', (req, res) => {
-  const blockIndex = kisaCoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
+  const newTransaction = req.body;
+  const blockIndex = kisaCoin.addTransactionToPendingTransactions(newTransaction);
+  console.log(`Recieved a new transaction!.. It will be added in block number: ${blockIndex}`);
   res.json({ info: `Tranaction will be mined in block number: ${blockIndex}`});
+});
+
+app.post('/transaction/broadcast', (req, res) => {
+  const { amount, sender, recipient } = req.body;
+  const newTransaction = kisaCoin.createNewTransaction(amount, sender, recipient);
+  const blockIndex = kisaCoin.addTransactionToPendingTransactions(newTransaction);
+
+  let transactionPromises = []
+  kisaCoin.networkNodes.forEach((networkNodeUrl) => {
+    const options = {
+      uri: networkNodeUrl + '/transaction',
+      method: 'POST',
+      body: newTransaction,
+      json: true
+    }
+
+    transactionPromises.push(rp(options));
+  });
+
+  Promise.all(transactionPromises).then(data => {
+    res.json({ info: 'transaction created and broadcasted successfully...'});
+  })
 });
 
 app.get('/mine', (req, res) => {
