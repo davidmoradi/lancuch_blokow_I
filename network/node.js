@@ -54,7 +54,7 @@ app.get('/mine', (req, res) => {
   const lastBlock = kisaCoin.getLastBlock();
   const previousBlockHash = lastBlock['hash'];
   const currentBlockData = {
-    transaction: kisaCoin.pendingTransactions,
+    transactions: kisaCoin.pendingTransactions,
     index: kisaCoin.chain.length + 1
   }
 
