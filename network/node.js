@@ -179,6 +179,48 @@ app.post('/register-node-in-bulk', (req, res) => {
   res.json({ info: "Bulk registration successful..."})
 });
 
+app.get('/consensus', (req, res) => {
+  let requestPromises = [];
+  kisaCoin.networkNodes.forEach((networkNodeUrl) => {
+    const requestOptions = {
+      uri: networkNodeUrl + '/blockchain',
+      method: 'GET',
+      json: true
+    }
+
+    requestPromises.push(rp(requestOptions));
+  });
+
+  Promise.all(requestPromises).then((blockchains) => {
+    const currentChainLength = kisaCoin.chain.length;
+    let maxChainLength = currentChainLength;
+    let newLongestChain = null;
+    let newPendingTransactions = null;
+
+    blockchains.forEach((blockchain) => {
+      if (blockchain.chain.length > currentChainLength) {
+        maxChainLength = blockchain.chain.length;
+        newLongestChain = blockchain.chain;
+        newPendingTransactions = blockchain.pendingTransactions;
+      }
+    });
+
+    if (!newLongestChain || newLongestChain && !kisaCoin.chainIsValid(newLongestChain)) {
+      res.json({
+        info: 'Current chain is good and has not been replaced',
+        chain: kisaCoin.chain
+      });
+    } else {
+      kisaCoin.chain = newLongestChain; // Replace current chain with the longest one
+      kisaCoin.pendingTransactions = newPendingTransactions;
+      res.json({
+        info: 'This chain has been replaced with a longer one',
+        chain: kisaCoin.chain
+      });
+    }
+  });
+});
+
 app.listen(port, () => {
   console.log(`listening on port ${port}!...`)
 })
