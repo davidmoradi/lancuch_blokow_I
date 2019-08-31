@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
+const path = require('path')
 const Blockchain = require('../blockchain/blockchain');
 const port = process.argv[2]; // get the passed-in port number from command line
 const rp = require('request-promise');
@@ -241,6 +242,11 @@ app.get('/address/:address', (req, res) => {
   const addressData = kisaCoin.getAddressData(req.params.address);
 
   res.json({ addressData });
+});
+
+app.get('/block-explorer', (req, res) => {
+  const resovleToPath = path.resolve(__dirname + '/../block_explorer/index.html');
+	res.sendFile(resovleToPath);
 });
 
 app.listen(port, () => {
