@@ -221,6 +221,28 @@ app.get('/consensus', (req, res) => {
   });
 });
 
+app.get('/block/:blockHash', (req, res) => {
+  const blockHash = req.params.blockHash;
+  const correctBlock = kisaCoin.getBlock(blockHash);
+
+  res.json({
+    block: correctBlock
+  });
+});
+
+app.get('/transaction/:transactionId', (req, res) => {
+  const transactionId = req.params.transactionId;
+  const { transaction, block } = kisaCoin.getTransaction(transactionId);
+
+  res.json({ transaction, block });
+});
+
+app.get('/address/:address', (req, res) => {
+  const addressData = kisaCoin.getAddressData(req.params.address);
+
+  res.json({ addressData });
+});
+
 app.listen(port, () => {
   console.log(`listening on port ${port}!...`)
 })
